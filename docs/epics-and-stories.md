@@ -1,0 +1,83 @@
+- Epic: Task Creation & Validation
+  - Story: Require title on task creation
+    - Technical Requirements:
+      - Frontend (`packages/frontend/src/TaskForm.js`): block submit when `title.trim()` is empty; show error text. Already partially implemented.
+      - Backend (`POST /api/tasks` in `packages/backend/src/app.js`): return 400 for missing/blank `title`. Already implemented.
+  - Story: Default priority to P3
+    - Technical Requirements:
+      - Frontend: add `priority` field to `TaskForm` using MUI `Select` with options `P1 | P2 | P3`; default `P3`. Include `priority` in `onSave` payload.
+      - Backend (Post-MVP or adapter-based): add `priority` column (`TEXT`) with allowed values `P1,P2,P3`; accept `priority` in `POST`/`PUT`. For MVP (no backend changes), persist `priority` via a local storage adapter.
+  - Story: Validate due date format (ignore invalid)
+    - Technical Requirements:
+      - Frontend: ensure `due_date` is ISO `YYYY-MM-DD` (`TextField type="date"`); if invalid/unparsable, omit `due_date` from payload.
+      - Backend: treat missing/invalid `due_date` as `NULL`; do not error on invalid strings.
+
+- Epic: Priority Support
+  - Story: Add priority field to task form
+    - Technical Requirements:
+      - Use MUI `Select` with `P1`, `P2`, `P3` options; default `P3`. Place above description, follow UI palette.
+  - Story: Save priority in task model
+    - Technical Requirements:
+      - Frontend: include `priority` in task object; when using local storage, store alongside `title`, `description`, `due_date`, `completed`.
+      - Backend (if used): add `priority` to DB schema and CRUD endpoints; otherwise skip for MVP.
+  - Story: Show priority in task list
+    - Technical Requirements:
+      - `packages/frontend/src/TaskList.js`: render a color-coded MUI `Chip` for `priority` (P1=red, P2=orange, P3=gray) near due date chip.
+
+- Epic: Due Date Support
+  - Story: Add due date field to task form
+    - Technical Requirements:
+      - `TaskForm`: MUI `TextField` with `type="date"` and `InputLabelProps={{ shrink: true }}`; bind to `due_date` state.
+  - Story: Save due date in task model
+    - Technical Requirements:
+      - Frontend: include `due_date` in payload; normalize to `YYYY-MM-DD` before save.
+      - Backend: already stores `due_date` (`DATE`); no schema change needed.
+  - Story: Treat invalid due dates as absent
+    - Technical Requirements:
+      - Frontend: strip invalid `due_date` on submit; avoid sending malformed dates.
+      - Backend: if invalid slips through, coerce to `NULL` (do not reject).
+
+- Epic: Date-Based Filters
+  - Story: Add All filter tab
+    - Technical Requirements:
+      - Implement MUI `Tabs` in `App` or `TaskList`; All tab fetches all tasks via adapter (`local storage` for MVP or `GET /api/tasks`).
+  - Story: Add Today filter tab
+    - Technical Requirements:
+      - Client-side filter: `due_date === today` and `completed === false`. Do not require backend changes for MVP.
+  - Story: Add Overdue filter tab
+    - Technical Requirements:
+      - Client-side filter: `due_date < today` and `completed === false`. Exclude completed tasks.
+  - Story: Show incomplete only in Today and Overdue
+    - Technical Requirements:
+      - Ensure filter logic hides completed tasks; optionally use backend when available with `GET /api/tasks?completed=false` and further date filtering client-side.
+  - Story: Show all tasks in All view
+    - Technical Requirements:
+      - Display both completed and incomplete; maintain existing fetch behavior.
+
+- Epic: Local Storage
+  - Story: Persist tasks in local storage
+    - Technical Requirements:
+      - Create `packages/frontend/src/storage.js` adapter with `list/create/update/patch/remove` using `window.localStorage` key `todo.tasks`.
+      - Refactor `TaskForm` and `TaskList` to use adapter for MVP; keep backend fetch paths behind an interface.
+  - Story: Avoid backend/external storage changes
+    - Technical Requirements:
+      - Do not modify backend for MVP; app must function offline with local storage only.
+
+- Epic: Overdue Highlighting (Post-MVP)
+  - Story: Visually emphasize overdue tasks in list
+    - Technical Requirements:
+      - In `TaskList`, apply red accent/border for tasks with `due_date < today` and `!completed`; add aria-label for accessibility.
+
+- Epic: Sorting Rules (Post-MVP)
+  - Story: Order overdue tasks first
+    - Technical Requirements:
+      - Implement client-side comparator placing overdue (incomplete) first. Optionally update backend SQL accordingly.
+  - Story: Sort by priority P1 to P3
+    - Technical Requirements:
+      - Implement rank map `{P1:1, P2:2, P3:3}`; sort ascending by rank.
+  - Story: Sort by due date ascending
+    - Technical Requirements:
+      - Compare by `new Date(YYYY-MM-DD)`; handle timezone consistently; treat `NULL`/missing as last.
+  - Story: Place undated tasks last
+    - Technical Requirements:
+      - Ensure comparator pushes tasks with missing `due_date` to the end.
