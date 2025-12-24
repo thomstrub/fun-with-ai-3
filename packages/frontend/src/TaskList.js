@@ -64,6 +64,34 @@ function TaskList({ onEdit }) {
     }
   };
 
+  const handlePriorityChange = async (task, newPriority) => {
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          title: task.title, 
+          description: task.description, 
+          due_date: task.due_date,
+          priority: newPriority 
+        })
+      });
+      
+      if (!response.ok) throw new Error('Failed to update priority');
+      
+      // Update the local state immediately for instant UI feedback
+      setTasks(prevTasks => 
+        prevTasks.map(t => 
+          t.id === task.id ? { ...t, priority: newPriority } : t
+        )
+      );
+    } catch (err) {
+      setError('Failed to update priority');
+      // Refetch tasks if there's an error to ensure consistency
+      fetchTasks();
+    }
+  };
+
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
       <CircularProgress sx={{ color: '#1976d2' }} />
@@ -203,6 +231,28 @@ function TaskList({ onEdit }) {
                 gap: 1
               }}
             >
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                {['P1', 'P2', 'P3'].map((priority) => (
+                  <Chip
+                    key={priority}
+                    label={priority}
+                    size="small"
+                    clickable
+                    onClick={() => handlePriorityChange(task, priority)}
+                    sx={{
+                      height: 20,
+                      fontSize: '0.7rem',
+                      fontWeight: 500,
+                      background: task.priority === priority ? '#07F2E6' : '#7A7A7A',
+                      color: 'white',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        background: task.priority === priority ? '#06D1C4' : '#666666'
+                      }
+                    }}
+                  />
+                ))}
+              </Box>
               {task.due_date && (
                 <Chip
                   icon={<EventIcon sx={{ fontSize: 14 }} />}
