@@ -239,16 +239,12 @@ function TaskList({ onEdit }) {
                     size="small"
                     clickable
                     onClick={() => handlePriorityChange(task, priority)}
+                    className={task.priority === priority ? 'priority-button-selected' : 'priority-button-unselected'}
                     sx={{
                       height: 20,
                       fontSize: '0.7rem',
                       fontWeight: 500,
-                      background: task.priority === priority ? '#07F2E6' : '#7A7A7A',
-                      color: 'white',
-                      cursor: 'pointer',
-                      '&:hover': {
-                        background: task.priority === priority ? '#06D1C4' : '#666666'
-                      }
+                      cursor: 'pointer'
                     }}
                   />
                 ))}
