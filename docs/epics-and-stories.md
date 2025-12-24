@@ -3,81 +3,146 @@
     - Technical Requirements:
       - Frontend (`packages/frontend/src/TaskForm.js`): block submit when `title.trim()` is empty; show error text. Already partially implemented.
       - Backend (`POST /api/tasks` in `packages/backend/src/app.js`): return 400 for missing/blank `title`. Already implemented.
+    - Acceptance Criteria:
+      - Submitting without a non-empty title is blocked and shows an error.
+      - API returns an error for blank titles when used; UI surfaces the error.
+      - After adding a valid title, the task saves and appears in the list.
   - Story: Default priority to P3
     - Technical Requirements:
       - Frontend: add `priority` field to `TaskForm` using MUI `Select` with options `P1 | P2 | P3`; default `P3`. Include `priority` in `onSave` payload.
       - Backend (Post-MVP or adapter-based): add `priority` column (`TEXT`) with allowed values `P1,P2,P3`; accept `priority` in `POST`/`PUT`. For MVP (no backend changes), persist `priority` via a local storage adapter.
+    - Acceptance Criteria:
+      - New tasks default to `P3` if the user does not change priority.
+      - Editing a task shows the existing priority; if missing, `P3` is shown.
+      - Priority is visible wherever tasks are listed.
   - Story: Validate due date format (ignore invalid)
     - Technical Requirements:
       - Frontend: ensure `due_date` is ISO `YYYY-MM-DD` (`TextField type="date"`); if invalid/unparsable, omit `due_date` from payload.
       - Backend: treat missing/invalid `due_date` as `NULL`; do not error on invalid strings.
+    - Acceptance Criteria:
+      - The date input accepts `YYYY-MM-DD` values and prevents invalid entries.
+      - Invalid or unparsable dates are not saved; the task shows no due date.
+      - Valid due dates render as a chip in the task list.
 
 - Epic: Priority Support
   - Story: Add priority field to task form
     - Technical Requirements:
       - Use MUI `Select` with `P1`, `P2`, `P3` options; default `P3`. Place above description, follow UI palette.
+    - Acceptance Criteria:
+      - The form displays a selector with options `P1`, `P2`, `P3`.
+      - `P3` is preselected by default.
+      - Changing the selector updates the value used on save.
   - Story: Save priority in task model
     - Technical Requirements:
       - Frontend: include `priority` in task object; when using local storage, store alongside `title`, `description`, `due_date`, `completed`.
       - Backend (if used): add `priority` to DB schema and CRUD endpoints; otherwise skip for MVP.
+    - Acceptance Criteria:
+      - On create/edit, the selected priority is persisted.
+      - The saved priority persists across page reloads.
+      - The list shows the stored priority per task.
   - Story: Show priority in task list
     - Technical Requirements:
       - `packages/frontend/src/TaskList.js`: render a color-coded MUI `Chip` for `priority` (P1=red, P2=orange, P3=gray) near due date chip.
+    - Acceptance Criteria:
+      - Each task shows a color-coded chip for its priority.
+      - Chip colors: P1 red, P2 orange, P3 gray.
+      - Priority chips align with the due date chip area.
 
 - Epic: Due Date Support
   - Story: Add due date field to task form
     - Technical Requirements:
       - `TaskForm`: MUI `TextField` with `type="date"` and `InputLabelProps={{ shrink: true }}`; bind to `due_date` state.
+    - Acceptance Criteria:
+      - The form includes a date picker labeled "Due Date".
+      - Users can set and clear the due date.
   - Story: Save due date in task model
     - Technical Requirements:
       - Frontend: include `due_date` in payload; normalize to `YYYY-MM-DD` before save.
       - Backend: already stores `due_date` (`DATE`); no schema change needed.
+    - Acceptance Criteria:
+      - Saved tasks include `due_date` in `YYYY-MM-DD` format when set.
+      - The list displays saved dates in a readable format.
   - Story: Treat invalid due dates as absent
     - Technical Requirements:
       - Frontend: strip invalid `due_date` on submit; avoid sending malformed dates.
       - Backend: if invalid slips through, coerce to `NULL` (do not reject).
+    - Acceptance Criteria:
+      - Submitting an invalid date results in no due date saved.
+      - No due date chip is shown for invalid/missing dates.
 
 - Epic: Date-Based Filters
   - Story: Add All filter tab
     - Technical Requirements:
       - Implement MUI `Tabs` in `App` or `TaskList`; All tab fetches all tasks via adapter (`local storage` for MVP or `GET /api/tasks`).
+    - Acceptance Criteria:
+      - An "All" tab shows both completed and incomplete tasks.
+      - Switching tabs updates the list immediately without page reload.
   - Story: Add Today filter tab
     - Technical Requirements:
       - Client-side filter: `due_date === today` and `completed === false`. Do not require backend changes for MVP.
+    - Acceptance Criteria:
+      - The "Today" tab shows tasks due today only.
+      - Completed tasks are hidden in this tab.
   - Story: Add Overdue filter tab
     - Technical Requirements:
       - Client-side filter: `due_date < today` and `completed === false`. Exclude completed tasks.
+    - Acceptance Criteria:
+      - The "Overdue" tab shows tasks with due dates earlier than today.
+      - Completed tasks are hidden in this tab.
   - Story: Show incomplete only in Today and Overdue
     - Technical Requirements:
       - Ensure filter logic hides completed tasks; optionally use backend when available with `GET /api/tasks?completed=false` and further date filtering client-side.
+    - Acceptance Criteria:
+      - Completed tasks never appear in "Today" or "Overdue" views.
+      - Marking a task complete removes it from these views immediately.
   - Story: Show all tasks in All view
     - Technical Requirements:
       - Display both completed and incomplete; maintain existing fetch behavior.
+    - Acceptance Criteria:
+      - Both completed and incomplete tasks are visible in "All".
+      - Toggling completion updates the row state but keeps the task visible.
 
 - Epic: Local Storage
   - Story: Persist tasks in local storage
     - Technical Requirements:
       - Create `packages/frontend/src/storage.js` adapter with `list/create/update/patch/remove` using `window.localStorage` key `todo.tasks`.
       - Refactor `TaskForm` and `TaskList` to use adapter for MVP; keep backend fetch paths behind an interface.
+    - Acceptance Criteria:
+      - Tasks remain available after a page refresh.
+      - Create/edit/complete/delete operations succeed offline.
   - Story: Avoid backend/external storage changes
     - Technical Requirements:
       - Do not modify backend for MVP; app must function offline with local storage only.
+    - Acceptance Criteria:
+      - The app operates without requiring backend changes for MVP.
+      - No external storage dependency is introduced.
 
 - Epic: Overdue Highlighting (Post-MVP)
   - Story: Visually emphasize overdue tasks in list
     - Technical Requirements:
       - In `TaskList`, apply red accent/border for tasks with `due_date < today` and `!completed`; add aria-label for accessibility.
+    - Acceptance Criteria:
+      - Overdue, incomplete tasks have a clear red visual emphasis.
+      - Completed overdue tasks are not emphasized.
 
 - Epic: Sorting Rules (Post-MVP)
   - Story: Order overdue tasks first
     - Technical Requirements:
       - Implement client-side comparator placing overdue (incomplete) first. Optionally update backend SQL accordingly.
+    - Acceptance Criteria:
+      - Overdue, incomplete tasks sort before other tasks.
   - Story: Sort by priority P1 to P3
     - Technical Requirements:
       - Implement rank map `{P1:1, P2:2, P3:3}`; sort ascending by rank.
+    - Acceptance Criteria:
+      - Within non-overdue tasks, P1 appears before P2, before P3.
   - Story: Sort by due date ascending
     - Technical Requirements:
       - Compare by `new Date(YYYY-MM-DD)`; handle timezone consistently; treat `NULL`/missing as last.
+    - Acceptance Criteria:
+      - Tasks with earlier due dates appear before later ones.
   - Story: Place undated tasks last
     - Technical Requirements:
       - Ensure comparator pushes tasks with missing `due_date` to the end.
+    - Acceptance Criteria:
+      - Tasks with no due date are listed after all dated tasks.
